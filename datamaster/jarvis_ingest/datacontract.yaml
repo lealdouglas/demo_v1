@@ -1,0 +1,108 @@
+# Especificação do contrato de dados
+# Data contract specification
+dataContractSpecification: 0.9.3
+
+# Identificador único do contrato de dados
+# Unique identifier for the data contract
+id: urn:datacontract:datamaster:jarvis:ingest:consents
+
+# Informações sobre o contrato de dados
+# Information about the data contract
+info:
+  # Título do contrato de dados
+  # Title of the data contract
+  title: Jarvis Ingest consents
+
+  # Versão do contrato de dados
+  # Version of the data contract
+  version: 1.0.0
+
+  # Descrição do contrato de dados
+  # Description of the data contract
+  description: |
+    descricao do contrato.
+
+  # Proprietário do contrato de dados
+  # Owner of the data contract
+  owner: Jarvis Ingest
+
+  # Domínio do contrato de dados
+  # Domain of the data contract
+  domain: 'risk'
+
+  # Contato do proprietário do contrato de dados
+  # Contact information for the data contract owner
+  contact:
+    name: Nome Autor
+    url: https://www.linkedin.com/in/nomeautor/
+
+# Informações sobre os servidores
+# Information about the servers
+servers:
+  development:
+    # Tipo de servidor
+    # Type of server
+    type: databricks
+
+    # Host do servidor
+    # Server host
+    host: https://HOST.azuredatabricks.net/
+
+    # Catálogo do servidor
+    # Server catalog
+    catalog: dtmaster_catalog
+
+    # Esquema do servidor
+    # Server schema
+    schema: bronze
+
+# Níveis de serviço do contrato de dados
+# Service levels for the data contract
+servicelevels:
+  # Retenção dos dados
+  # Data retention
+  retention:
+    period: 1 day
+
+  # Frequência de atualização dos dados
+  # Data update frequency
+  frequency:
+    description: Data is updated once a day
+    type: batch
+    cron: 49 1 0/2 * * ? #cron schedule
+
+# Exemplos de dados para o modelo de dados
+# Data examples for the data model
+examples:
+  - type: 'csv'
+    model: 'consents'
+    data: |
+      consent_id,user_id,data_inicio,data_fim,tipo_dados,tipo_id,status,plataforma_origem
+      1001,10004,2023-03-05,2023-12-16,Dados de Publicidade,001,Ativo,Web
+      1002,10002,2023-11-29,2024-08-06,Dados de Histórico de Navegação,002,Revogado,API
+      1003,10008,2024-06-07,2024-10-03,Dados de Crédito,003,Revogado,API
+      1004,10005,2024-05-05,2024-12-04,Dados de Localização,004,Ativo,Mobile
+      1005,10008,2024-03-04,2024-03-30,Dados de Navegação,005,Ativo,Mobile
+
+# Regras de qualidade dos dados
+# Data quality rules
+quality:
+  type: SodaCL
+  specification:
+    checks for consents:
+      - row_count > 25
+
+# Workflow de ingestão de dados
+# Data ingestion workflow
+workflow:
+  model: 'consents'
+  email_notifications:
+    on_start: ['nomeautor@example.com']
+    on_success: ['nomeautor@example.com']
+    on_failure: ['nomeautor@example.com']
+  source:
+    type: 'eventhub'
+    format: 'avro'
+    header: true
+    delimiter: ','
+    job_mock: true

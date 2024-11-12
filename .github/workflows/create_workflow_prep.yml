@@ -1,0 +1,180 @@
+name: 04. Jarvis - Create Workflow Prep
+
+# Este workflow do GitHub Actions é utilizado para configurar e executar um script Python
+# que realiza a preparação de dados utilizando o Jarvis. Ele é composto por várias etapas:
+# 1. Faz o checkout do repositório principal.
+# 2. Instala o Python.
+# 3. Instala o Poetry, uma ferramenta de gerenciamento de dependências.
+# 4. Instala as dependências do projeto usando o Poetry.
+# 5. Executa os testes do projeto.
+# 6. Constrói o projeto.
+# 7. Configura o CLI do Databricks.
+# 8. Cria diretórios no workspace do Databricks.
+# 9. Importa diretórios para o workspace do Databricks.
+# 10. Executa o script Python de preparação de dados, passando o caminho para o arquivo de configuração YAML.
+
+# This GitHub Actions workflow is used to set up and run a Python script
+# that performs data preparation using Jarvis. It consists of several steps:
+# 1. Check out the main repository.
+# 2. Install Python.
+# 3. Install Poetry, a dependency management tool.
+# 4. Install project dependencies using Poetry.
+# 5. Run project tests.
+# 6. Build the project.
+# 7. Set up the Databricks CLI.
+# 8. Create directories in the Databricks workspace.
+# 9. Import directories to the Databricks workspace.
+# 10. Run the Python data preparation script, passing the path to the YAML configuration file.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  task-covv-definition-project:
+    name: 'Task COVV Definition Project'
+    runs-on: ubuntu-latest
+
+    steps:
+      # Faz o checkout do repositório principal
+      # Checkout the current repository
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Instalar o python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Instalar dependências do projeto
+        run: |
+          cd ${{ github.workspace }}/datamaster/jarvis_prep/definition_project
+          poetry install --without doc
+
+      - name: Rodar os testes
+        run: |
+          cd ${{ github.workspace }}/datamaster/jarvis_prep/definition_project
+          poetry run task test --cov-report=xml
+
+  build-definition-project:
+    name: 'Build Definition Project'
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.TF_ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.TF_ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.TF_ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.TF_ARM_TENANT_ID }}
+      DATABRICKS_HOST: ${{ secrets.ADB_ACCOUNT_HOST }}
+
+    needs: task-covv-definition-project
+    steps:
+      # Faz o checkout do repositório principal
+      # Checkout the current repository
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      - name: Instalar o python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Instalar dependências do projeto
+        run: |
+          cd ${{ github.workspace }}/datamaster/jarvis_prep/definition_project
+          poetry install --without doc
+          poetry build
+
+      - name: Instalar dependências do projeto
+        run: ls -la
+
+      - name: Instalar dependências do projeto
+        run: |
+          cd ${{ github.workspace }}/datamaster/jarvis_prep/definition_project/dist
+          ls -la
+
+      # Configura o CLI do Databricks
+      # Set up Databricks CLI
+      - name: Set up Databricks CLI
+        uses: databricks/setup-cli@v0.230.0
+
+      - name: create
+        run: |
+          databricks workspace mkdirs /Workspace/jarvis/prep/datacontract
+          databricks workspace mkdirs /Workspace/jarvis/prep/definition_project
+
+      # Importa o diretório para o workspace do Databricks
+      # Import directory to Databricks workspace
+      - name: Import directory to Databricks workspace
+        run: databricks workspace import-dir datamaster/jarvis_prep/datacontract.yaml /Workspace/jarvis/prep/datacontract/datacontract.yaml --overwrite
+
+      # Importa o diretório para o workspace do Databricks
+      # Import directory to Databricks workspace
+      - name: Import directory to Databricks workspace
+        run: |
+          databricks workspace delete /Workspace/jarvis/prep/definition_project/ --recursive
+          cd datamaster/jarvis_prep/definition_project/dist/
+          databricks workspace import-dir . /Workspace/jarvis/prep/definition_project --debug
+
+  jarvis-create-workflow-prep:
+    name: 'Create prep Workflow Definition Project'
+    runs-on: ubuntu-latest
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.TF_ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.TF_ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.TF_ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.TF_ARM_TENANT_ID }}
+
+    needs: build-definition-project
+    steps:
+      # Faz o checkout do repositório principal
+      # Checkout the current repository
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+
+      # Faz o checkout de outro repositório privado
+      # Checkout another private repository
+      - name: Check Jarvis repository
+        uses: actions/checkout@v4
+        with:
+          repository: lealdouglas/jarvis
+          path: jarvis-repo
+
+      # Configura o Python
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Instala o Poetry
+      # Install Poetry
+      - name: Instalar Poetry
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # Instala o Poetry
+      # Install Poetry
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      # Instala as dependências do Poetry
+      # Install Poetry dependencies
+      - name: Install dependencies
+        run: |
+          cd jarvis-repo/jarvis
+          poetry install --without doc
+
+      # Executa o script Python, passando o caminho do arquivo config.yaml
+      # Run the Python script, passing the path to the config.yaml file
+      - name: Run Python script - Jarvis Prep
+        run: |
+          cd jarvis-repo/jarvis
+          poetry run python main.py prep ../../datamaster/jarvis_prep/datacontract.yaml

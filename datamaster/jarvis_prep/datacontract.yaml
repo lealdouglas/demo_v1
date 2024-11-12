@@ -1,0 +1,140 @@
+# Especificação do contrato de dados
+# Data contract specification
+dataContractSpecification: 0.9.3
+
+# Identificador único do contrato de dados
+# Unique identifier for the data contract
+id: urn:datacontract:datamaster:jarvis:prep:consents
+
+# Informações sobre o contrato de dados
+# Information about the data contract
+info:
+  # Título do contrato de dados
+  # Title of the data contract
+  title: Jarvis Prep consents
+
+  # Versão do contrato de dados
+  # Version of the data contract
+  version: 1.0.0
+
+  # Descrição do contrato de dados
+  # Description of the data contract
+  description: |
+    descricao do contrato.
+
+  # Proprietário do contrato de dados
+  # Owner of the data contract
+  owner: Jarvis Prep
+
+  # Domínio do contrato de dados
+  # Domain of the data contract
+  domain: 'risk'
+
+  # Contato do proprietário do contrato de dados
+  # Contact information for the data contract owner
+  contact:
+    name: Nome Autor
+    url: https://www.linkedin.com/in/nomeautor/
+
+# Informações sobre os servidores
+# Information about the servers
+servers:
+  development:
+    type: databricks
+    host: https://HOST.azuredatabricks.net
+    catalog: crisk
+    schema: silver
+
+models:
+  consents:
+    description: Table Consents of Open Finance.
+    type: table
+    fields:
+      user_id:
+        type: integer
+        nullable: false
+        description: Identificador do usuário que deu o consentimento.
+        examples:
+          - 10001
+          - 10010
+      tipo_id:
+        type: integer
+        nullable: false
+        description: Identificador do tipo do dado que deu o consentimento.
+        examples:
+          - 001
+          - 002
+      tipo_dados:
+        type: string
+        max_length: 100
+        nullable: false
+        description: Tipo de dados consentidos, como "Dados Financeiros" ou "Dados de Crédito".
+        examples:
+          - Dados Financeiros
+          - Dados de Crédito
+      status:
+        type: string
+        nullable: false
+        description: Indica o estado do consentimento.
+        examples:
+          - Ativo
+          - Revogado
+      plataforma_origem:
+        type: string
+        max_length: 50
+        nullable: true
+        description: Origem do consentimento.
+        examples:
+          - Web
+          - Mobile
+
+# Níveis de serviço do contrato de dados
+# Service levels for the data contract
+servicelevels:
+  # Retenção dos dados
+  # Data retention
+  retention:
+    period: 1 day
+
+  # Frequência de atualização dos dados
+  # Data update frequency
+  frequency:
+    description: Data is updated once a day
+    type: batch
+    cron: 49 1 0/2 * * ? #cron schedule
+
+# Exemplos de dados para o modelo de dados
+# Data examples for the data model
+examples:
+  - type: 'csv'
+    model: 'consents'
+    data: |
+      user_id,tipo_id,tipo_dados,status,plataforma_origem
+      10004,001,Dados de Publicidade,Ativo,Mobile
+      10004,002,Dados de Histórico de Navegação,Ativo,Mobile
+      10002,002,Dados de Histórico de Navegação,Revogado,Mobile
+      10008,003,Dados de Crédito,Revogado,Mobile
+      10005,004,Dados de Localização,Ativo,Mobile
+      10008,005,Dados de Navegação,Ativo,Mobile
+
+# Regras de qualidade dos dados
+# Data quality rules
+quality:
+  type: SodaCL
+  specification:
+    checks for consents:
+      - row_count > 25
+
+# Workflow de ingestão de dados
+# Data ingestion workflow
+workflow:
+  model: 'consents'
+  email_notifications:
+    on_start: ['nomeautor@example']
+    on_success: ['nomeautor@example']
+    on_failure: ['nomeautor@example']
+  tasks:
+    - task_key: main_task
+      python_wheel_task:
+        package_name: definition_project
+        entry_point: main
