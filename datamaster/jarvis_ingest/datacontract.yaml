@@ -46,7 +46,7 @@ servers:
 
     # Host do servidor
     # Server host
-    host: https://HOST.azuredatabricks.net/
+    host: https://adb-3432803520432064.4.azuredatabricks.net/
 
     # Catálogo do servidor
     # Server catalog
