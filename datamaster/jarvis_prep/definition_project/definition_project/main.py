@@ -91,17 +91,17 @@ def main():
         spark.read.format('delta')
         .table('crisk.bronze.consents')
         .select(
-            explode(from_json(col('body').cast(StringType()), schema_t)).alias(
-                'test'
+            explode(from_json(col('body').cast(StringType()), schema)).alias(
+                'json'
             ),
             col('EnqueuedTimeUtc'),
         )
         .select(
-            col('test.user_id').alias('user_id'),
-            col('test.tipo_id').alias('tipo_id'),
-            col('test.tipo_dados').alias('tipo_dados'),
-            col('test.status').alias('status'),
-            col('test.plataforma_origem').alias('plataforma_origem'),
+            col('json.user_id').alias('user_id'),
+            col('json.tipo_id').alias('tipo_id'),
+            col('json.tipo_dados').alias('tipo_dados'),
+            col('json.status').alias('status'),
+            col('json.plataforma_origem').alias('plataforma_origem'),
             col('EnqueuedTimeUtc'),
         )
         .withColumn('RN', row_number().over(windowSpec))
