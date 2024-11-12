@@ -41,7 +41,7 @@ info:
 servers:
   development:
     type: databricks
-    host: https://HOST.azuredatabricks.net
+    host: https://adb-3432803520432064.4.azuredatabricks.net
     catalog: crisk
     schema: silver
 
