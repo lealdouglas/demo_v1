@@ -89,7 +89,7 @@ def main():
     )
 
     logins_checkpoint = (
-        '/Volumes/crisk/silver/volume_checkpoint_locations_silver/consents'
+        '/Volumes/crisk/bronze/volume_checkpoint_locations/silver/consents'
     )
 
     # Leitura dos dados em modo batch
