@@ -22,6 +22,10 @@ from pyspark.sql.window import Window
 
 def foreach_batch_function(ds, batch_id):
 
+    windowSpec = Window.partitionBy('user_id', 'tipo_id').orderBy(
+        desc('EnqueuedTimeUtc')
+    )
+
     new_df = ds.withColumn('RN', row_number().over(windowSpec)).where(
         'RN == 1'
     )
@@ -83,10 +87,6 @@ def main():
 
     # Inicializa a SparkSession com suporte ao Delta Lake
     spark = SparkSession.builder.getOrCreate()
-
-    windowSpec = Window.partitionBy('user_id', 'tipo_id').orderBy(
-        desc('EnqueuedTimeUtc')
-    )
 
     logins_checkpoint = (
         '/Volumes/crisk/bronze/volume_checkpoint_locations/silver/consents'
