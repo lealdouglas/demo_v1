@@ -20,9 +20,13 @@ from pyspark.sql.types import (
 from pyspark.sql.window import Window
 
 
-def merge_silver(spark, new_df, table_name):
+def foreach_batch_function(ds, batch_id):
 
-    # Carrega a tabela Delta
+    new_df = ds.withColumn('RN', row_number().over(windowSpec)).where(
+        'RN == 1'
+    )
+
+    table_name = 'crisk.silver.consents'
     delta_table = DeltaTable.forName(spark, table_name)
 
     # Realiza o merge (upsert) dos dados novos na tabela Delta
@@ -43,8 +47,6 @@ def merge_silver(spark, new_df, table_name):
             'plataforma_origem': 'source.plataforma_origem',
         }
     ).execute()
-
-    print('Merge realizado com sucesso!')
 
 
 def main():
@@ -86,32 +88,38 @@ def main():
         desc('EnqueuedTimeUtc')
     )
 
+    logins_checkpoint = (
+        '/Volumes/crisk/silver/volume_checkpoint_locations_silver/consents'
+    )
+
     # Leitura dos dados em modo batch
-    new_df = (
-        spark.read.format('delta')
+    (
+        spark.readStream.format('delta')
+        .option('ignoreChanges', 'true')
         .table('crisk.bronze.consents')
         .select(
             explode(from_json(col('body').cast(StringType()), schema)).alias(
-                'json'
+                'test'
             ),
             col('EnqueuedTimeUtc'),
         )
         .select(
-            col('json.user_id').alias('user_id'),
-            col('json.tipo_id').alias('tipo_id'),
-            col('json.tipo_dados').alias('tipo_dados'),
-            col('json.status').alias('status'),
-            col('json.plataforma_origem').alias('plataforma_origem'),
+            col('test.user_id').alias('user_id'),
+            col('test.tipo_id').alias('tipo_id'),
+            col('test.tipo_dados').alias('tipo_dados'),
+            col('test.status').alias('status'),
+            col('test.plataforma_origem').alias('plataforma_origem'),
             col('EnqueuedTimeUtc'),
         )
-        .withColumn('RN', row_number().over(windowSpec))
-        .where('RN == 1')
+        .writeStream.trigger(availableNow=True)
+        .option('checkpointLocation', logins_checkpoint)
+        .foreachBatch(foreach_batch_function)
+        .start()
+        .awaitTermination()
     )
 
-    # merge bronze com dados existentes na tabela silver
-    merge_silver(spark, new_df, table_name)
-
     print('Processo finalizado com sucesso!')
+    print('Merge realizado com sucesso!')
 
 
 def hello_world():
