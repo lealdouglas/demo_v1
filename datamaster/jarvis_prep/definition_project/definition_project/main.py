@@ -31,7 +31,7 @@ def foreach_batch_function(ds, batch_id):
     )
 
     table_name = 'crisk.silver.consents'
-    delta_table = DeltaTable.forName(spark, table_name)
+    delta_table = DeltaTable.forName(SparkSession.builder.getOrCreate(), table_name)
 
     # Realiza o merge (upsert) dos dados novos na tabela Delta
     delta_table.alias('target').merge(
@@ -85,16 +85,13 @@ def main():
 
     table_name = 'crisk.silver.consents'
 
-    # Inicializa a SparkSession com suporte ao Delta Lake
-    spark = SparkSession.builder.getOrCreate()
-
     logins_checkpoint = (
         '/Volumes/crisk/bronze/volume_checkpoint_locations/silver/consents'
     )
 
     # Leitura dos dados em modo batch
     (
-        spark.readStream.format('delta')
+        SparkSession.builder.getOrCreate().readStream.format('delta')
         .option('ignoreChanges', 'true')
         .table('crisk.bronze.consents')
         .select(
